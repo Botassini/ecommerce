@@ -1,38 +1,185 @@
 <?php include 'includes/session.php'; ?>
 <?php include 'includes/header.php'; ?>
+
+<link rel="stylesheet" href="includes/css/cart-view.css">
+<script src="includes/js/cart-view.js"></script>
+<?php
+$conn = $pdo->open();
+if(isset($_SESSION['user'])){
+	$conn = $pdo->open();
+
+	$stmt = $conn->prepare("SELECT * FROM cart LEFT JOIN products on products.id=cart.product_id WHERE user_id=:user_id");
+	$stmt->execute(['user_id'=>$user['id']]);
+	$total = 0;
+	foreach($stmt as $row){
+		$subtotal = $row['price'] * $row['quantity'];
+		$total += $subtotal;
+	}
+
+	$pdo->close();
+}
+
+if(isset($_SESSION['user'])){
+	if(isset($_SESSION['cart'])){
+		foreach($_SESSION['cart'] as $row){
+			$stmt = $conn->prepare("SELECT *, COUNT(*) AS numrows FROM cart WHERE user_id=:user_id AND product_id=:product_id");
+			$stmt->execute(['user_id'=>$user['id'], 'product_id'=>$row['productid']]);
+			$crow = $stmt->fetch();
+			if($crow['numrows'] < 1){
+				$stmt = $conn->prepare("INSERT INTO cart (user_id, product_id, quantity) VALUES (:user_id, :product_id, :quantity)");
+				$stmt->execute(['user_id'=>$user['id'], 'product_id'=>$row['productid'], 'quantity'=>$row['quantity']]);
+			}
+			else{
+				$stmt = $conn->prepare("UPDATE cart SET quantity=:quantity WHERE user_id=:user_id AND product_id=:product_id");
+				$stmt->execute(['quantity'=>$row['quantity'], 'user_id'=>$user['id'], 'product_id'=>$row['productid']]);
+			}
+		}
+		unset($_SESSION['cart']);
+	}
+
+	try{
+		$total = 0;
+		$stmt = $conn->prepare("SELECT *, cart.id AS cartid FROM cart LEFT JOIN products ON products.id=cart.product_id WHERE user_id=:user");
+		$stmt->execute(['user'=>$user['id']]);
+		foreach($stmt as $row){
+			$image = (!empty($row['photo'])) ? 'images/'.$row['photo'] : 'images/noimage.jpg';
+			$subtotal = $row['price']*$row['quantity'];
+			$total += $subtotal;
+			
+		}
+
+
+	}
+	catch(PDOException $e){
+		
+	}
+
+}
+else{
+	if(count($_SESSION['cart']) != 0){
+		$total = 0;
+		foreach($_SESSION['cart'] as $row){
+			$stmt = $conn->prepare("SELECT *, products.name AS prodname, category.name AS catname FROM products LEFT JOIN category ON category.id=products.category_id WHERE products.id=:id");
+			$stmt->execute(['id'=>$row['productid']]);
+			$product = $stmt->fetch();
+			$image = (!empty($product['photo'])) ? 'images/'.$product['photo'] : 'images/noimage.jpg';
+			$subtotal = $product['price']*$row['quantity'];
+			$total += $subtotal;
+	
+
+			
+		}
+
+		
+	}
+
+	else{
+		
+	}
+	
+}
+
+// SDK de Mercado Pago
+require __DIR__ .  '/vendor/autoload.php';
+
+// Configurar credenciais
+MercadoPago\SDK::setAccessToken('APP_USR-4002014223947242-102412-31143af3104758daf0593e1e8befe1d8-740803689');
+
+// Criar um objeto de preferencia
+$preference = new MercadoPago\Preference();
+
+// Crear un elemento en la preferencia
+$item = new MercadoPago\Item();
+$item->title = 'Total da compra: ';
+$item->quantity = 1;
+$item->unit_price = $total;
+$preference->items = array($item);
+$preference->external_reference = 'Pedido 1';
+
+
+$preference->save();
+
+
+$pdo->close();
+
+
+
+
+
+
+?>
+
 <body class="hold-transition skin-blue layout-top-nav">
-<div class="wrapper">
-
-	<?php include 'includes/navbar.php'; ?>
-	 
-	  <div class="content-wrapper">
-	    <div class="container">
-
-	      <!-- Main content -->
-	      <section class="content">
-	        <div class="row">
-	        	<div class="col-sm-9">
-	        		<h1 class="page-header">YOUR CART</h1>
-	        		<div class="box box-solid">
-	        			<div class="box-body">
-		        		<table class="table table-bordered">
-		        			<thead>
-		        				<th></th>
-		        				<th>Photo</th>
-		        				<th>Name</th>
-		        				<th>Price</th>
-		        				<th width="20%">Quantity</th>
-		        				<th>Subtotal</th>
-		        			</thead>
-		        			<tbody id="tbody">
-		        			</tbody>
-		        		</table>
-	        			</div>
-	        		</div>
+<div>
+	
+<div class="wrap cf">
+  <h1 style="display: flex; justify-content: center; font-size: 40px;">FGL Distribuidora<span></span></h1>
+  <div class="heading cf">
+    <h1>Meu Carrinho</h1>
+    <a href="index.html" class="continue">Continue Shopping</a>
+  </div>
+  <div class="cart">
+<!--    <ul class="tableHead">
+      <li class="prodHeader">Product</li>
+      <li>Quantity</li>
+      <li>Total</li>
+       <li>Remove</li>
+    </ul>-->
+    <ul class="cartWrap">
+    <li class="items odd">
+        
+    <div class="infoWrap"> 
+        <div class="cartSection">
+		<div class="box box-solid">
+			<div class="box-body">
+				<table class="table table-bordered">
+					<thead>
+						<th></th>
+						<th>Foto</th>
+						<th>Nome</th>
+						<th>Preço</th>
+						<th width="20%">Quantidade</th>
+						
+					</thead>
+					
+				</table>
+			</div>
+		</div>
+        </div>
+	</div>
+	</li>
+      
+  
+  
+  <div class="subtotal cf">
+    <ul>
+      <li class="totalRow"><span class="label">Subtotal</span><span class="value">$35.00</span></li>
+      
+          <li class="totalRow"><span class="label">Shipping</span><span class="value">$5.00</span></li>
+      
+            <li class="totalRow"><span class="label">Tax</span><span class="value">$4.00</span></li>
+            <li class="totalRow final"><span class="label">Total</span><span class="value">$44.00</span></li>
+      <li class="totalRow"><a href="#" class="btn continue">Checkout</a></li>
+    </ul>
+  </div>
+</div>
+	  
+   
+    
+    
+    
+    
+    
+  
+</div>
+  
+	  
 	        		<?php
 	        			if(isset($_SESSION['user'])){
 	        				echo "
-	        					<div id='paypal-button'></div>
+	        					<div class='cho-container'></div>
+								
+							
 	        				";
 	        			}
 	        			else{
@@ -50,11 +197,16 @@
 	     
 	    </div>
 	  </div>
+						
+	  
   	<?php $pdo->close(); ?>
   	<?php include 'includes/footer.php'; ?>
 </div>
 
 <?php include 'includes/scripts.php'; ?>
+
+<!-- GAMBIARRA ITEMS -->
+
 <script>
 var total = 0;
 $(function(){
@@ -154,46 +306,41 @@ function getTotal(){
 	});
 }
 </script>
-<!-- Paypal Express -->
-<script>
-paypal.Button.render({
-    env: 'sandbox', // change for production if app is live,
 
-	client: {
-        sandbox:    'ASb1ZbVxG5ZFzCWLdYLi_d1-k5rmSjvBZhxP2etCxBKXaJHxPba13JJD_D3dTNriRbAv3Kp_72cgDvaZ',
-        //production: 'AaBHKJFEej4V6yaArjzSx9cuf-UYesQYKqynQVCdBlKuZKawDDzFyuQdidPOBSGEhWaNQnnvfzuFB9SM'
-    },
+<!DOCTYPE html>
 
-    commit: true, // Show a 'Pay Now' button
+	<html>
 
-    style: {
-    	color: 'gold',
-    	size: 'small'
-    },
+	<head>
+		<title>Pagar</title>
+	</head>
 
-    payment: function(data, actions) {
-        return actions.payment.create({
-            payment: {
-                transactions: [
-                    {
-                    	//total purchase
-                        amount: { 
-                        	total: total, 
-                        	currency: 'USD' 
-                        }
-                    }
-                ]
-            }
-        });
-    },
+	<body>
+		<div class="cho-container"/> 
+			<script src="https://sdk.mercadopago.com/js/v2"></script>
+			<script>
+				// CREDENCIAIS
+				const mp = new MercadoPago('APP_USR-a96c034c-6270-438e-84cd-f6465db2665b', {
+					locale: 'pt-BR'
+				});
 
-    onAuthorize: function(data, actions) {
-        return actions.payment.execute().then(function(payment) {
-			window.location = 'sales.php?pay='+payment.id;
-        });
-    },
+				// CHECKOUT START
+				mp.checkout({
+					preference: {
+						id: "<?php echo $preference->id; ?>"
+					},
+					render: {
+						container: '.cho-container', //CLASSE DO BOTAO
+						label: 'Pagamento', // LABEL DO BOTAO
+					}
+									
+				});
 
-}, '#paypal-button');
-</script>
+			</script>
+	</body>
+
+	</html>
+
+
 </body>
 </html>

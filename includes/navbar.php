@@ -11,7 +11,7 @@
       <!-- Collect the nav links, forms, and other content for toggling -->
       <div class="collapse navbar-collapse pull-left" id="navbar-collapse">
         <ul class="nav navbar-nav">
-          <li><a href="index.php">Home</a></li>
+          <li><a href="index.html">Home</a></li>
           <li><a href="">Sobre nós</a></li>
           <li><a href="">Contate-nos</a></li>
           <li class="dropdown">
@@ -83,7 +83,7 @@
 
                       <p>
                         '.$user['firstname'].' '.$user['lastname'].'
-                        <small>Member since '.date('M. Y', strtotime($user['created_on'])).'</small>
+                        <small>Membro desde '.date('M. Y', strtotime($user['created_on'])).'</small>
                       </p>
                     </li>
                     <li class="user-footer">
@@ -100,8 +100,8 @@
             }
             else{
               echo "
-                <li><a href='login.php'>Entrar</a></li>
-                <li><a href='signup.php'>Registro</a></li>
+                <li><a href='login.php'>Perfil</a></li>
+                
               ";
             }
           ?>

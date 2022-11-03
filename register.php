@@ -54,11 +54,11 @@
 				$set='123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 				$code=substr(str_shuffle($set), 0, 12);
 
-				$status = 1;
+				$code = 1;
 
 				try{
-					$stmt = $conn->prepare("INSERT INTO users (email, password, firstname, lastname, activate_code, created_on, status) VALUES (:email, :password, :firstname, :lastname, :code, :now, :status)");
-					$stmt->execute(['email'=>$email, 'password'=>$password, 'firstname'=>$firstname, 'lastname'=>$lastname, 'code'=>$code, 'now'=>$now, 'status'=>$status]);
+					$stmt = $conn->prepare("INSERT INTO users (email, password, firstname, lastname, activate_code, created_on, status) VALUES (:email, :password, :firstname, :lastname, :code, :now, :code)");
+					$stmt->execute(['email'=>$email, 'password'=>$password, 'firstname'=>$firstname, 'lastname'=>$lastname, 'code'=>$code, 'now'=>$now, 'status'=>$code]);
 					$userid = $conn->lastInsertId();
 
 					$message = "
